@@ -1,12 +1,23 @@
+import { db } from '../db';
+import { legalDocumentsTable, categoriesTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type CreateLegalDocumentInput, type LegalDocument } from '../schema';
 
-export async function createLegalDocument(input: CreateLegalDocumentInput): Promise<LegalDocument> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new legal document with bilingual content,
-    // associating it with a category, and persisting it in the database.
-    // Should handle proper validation of document types and required fields.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+export const createLegalDocument = async (input: CreateLegalDocumentInput): Promise<LegalDocument> => {
+  try {
+    // Verify that the referenced category exists
+    const categoryExists = await db.select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, input.category_id))
+      .execute();
+
+    if (categoryExists.length === 0) {
+      throw new Error(`Category with id ${input.category_id} does not exist`);
+    }
+
+    // Insert legal document record
+    const result = await db.insert(legalDocumentsTable)
+      .values({
         title_id: input.title_id,
         title_en: input.title_en,
         content_id: input.content_id,
@@ -21,7 +32,14 @@ export async function createLegalDocument(input: CreateLegalDocumentInput): Prom
         tags: input.tags,
         file_url: input.file_url,
         is_published: input.is_published,
-        created_at: new Date(), // Placeholder date
-        updated_at: new Date() // Placeholder date
-    } as LegalDocument);
-}
+        updated_at: new Date()
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Legal document creation failed:', error);
+    throw error;
+  }
+};

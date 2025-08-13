@@ -1,8 +1,28 @@
+import { db } from '../db';
+import { legalDocumentsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
 export async function deleteLegalDocument(id: number): Promise<boolean> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is soft-deleting or permanently removing
-    // a legal document from the database.
-    // Should return true if deletion was successful, false otherwise.
-    // Consider implementing soft delete for data integrity.
-    return Promise.resolve(true);
+  try {
+    // First check if the document exists
+    const existingDocument = await db.select()
+      .from(legalDocumentsTable)
+      .where(eq(legalDocumentsTable.id, id))
+      .execute();
+
+    if (existingDocument.length === 0) {
+      return false; // Document doesn't exist
+    }
+
+    // Permanently delete the document
+    const result = await db.delete(legalDocumentsTable)
+      .where(eq(legalDocumentsTable.id, id))
+      .execute();
+
+    // Drizzle returns an object with a rowCount property
+    return (result.rowCount ?? 0) > 0;
+  } catch (error) {
+    console.error('Legal document deletion failed:', error);
+    throw error;
+  }
 }

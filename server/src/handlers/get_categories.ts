@@ -1,8 +1,20 @@
+import { db } from '../db';
+import { categoriesTable } from '../db/schema';
 import { type Category } from '../schema';
+import { asc } from 'drizzle-orm';
 
 export async function getCategories(): Promise<Category[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all categories from the database
-    // with their bilingual names and descriptions for display in the UI.
-    return [];
+  try {
+    // Fetch all categories from the database, ordered by Indonesian name
+    const results = await db.select()
+      .from(categoriesTable)
+      .orderBy(asc(categoriesTable.name_id))
+      .execute();
+
+    // Return the categories (no numeric conversions needed for this table)
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
+    throw error;
+  }
 }
